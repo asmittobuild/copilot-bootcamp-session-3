@@ -92,3 +92,16 @@ li:last-child {
   color: #d32f2f;
   font-weight: bold;
 }
+
+:root {
+  --priority-selected-color: #07F2E6;
+  --priority-unselected-color: #7A7A7A;
+}
+
+.priority-item-selected {
+  color: var(--priority-selected-color);
+}
+
+.priority-item-unselected {
+  color: var(--priority-unselected-color);
+}
