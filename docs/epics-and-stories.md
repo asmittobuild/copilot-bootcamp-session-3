@@ -1,0 +1,131 @@
+## MVP
+
+- Epic: Task Data Fields
+  - Story: Add optional due date field to tasks
+    - Acceptance Criteria:
+      - Given a user creates or edits a task, when a valid date is provided, then the task is saved with a due date in `YYYY-MM-DD` format.
+      - Given a user creates or edits a task, when no due date is provided, then the task is saved without a due date.
+      - Given a task has a due date, when it is displayed in the list, then the due date is visible to the user.
+    - Technical Requirements:
+      - Frontend form captures due date using date input and submits `due_date` in API payloads.
+      - Backend persists `due_date` as nullable date field in the `tasks` table.
+      - Task list UI renders due date chip only when `due_date` is present.
+  - Story: Add priority field with P1, P2, and P3 options
+    - Acceptance Criteria:
+      - Given a user creates or edits a task, when selecting priority, then only `P1`, `P2`, or `P3` values are allowed.
+      - Given a task is displayed, when task metadata is shown, then the assigned priority is visible.
+      - Given malformed priority is submitted, when saving a task, then the value is rejected and not persisted.
+    - Technical Requirements:
+      - Add `priority` selector to task form with fixed options `P1`, `P2`, `P3`.
+      - Extend backend schema with `priority` column constrained to `P1|P2|P3`.
+      - Enforce backend validation for `priority` on create and update endpoints.
+      - Render a priority badge or chip in task list rows.
+  - Story: Set default priority to P3 for new tasks
+    - Acceptance Criteria:
+      - Given a user creates a task without selecting priority, when the task is saved, then priority defaults to `P3`.
+      - Given existing tasks without priority data, when tasks are read, then they are treated as `P3` for display and behavior.
+    - Technical Requirements:
+      - Initialize form state with `P3` for new task mode.
+      - Set backend default value for `priority` to `P3`.
+      - Ensure API response includes resolved priority value after create and update.
+
+- Epic: Task Filters
+  - Story: Add All tasks filter
+    - Acceptance Criteria:
+      - Given tasks exist, when `All` filter is active, then all tasks are shown regardless of completion state.
+      - Given filter controls are visible, when the page loads, then `All` is selected by default.
+    - Technical Requirements:
+      - Add filter state in frontend with default value `All`.
+      - Add UI controls (tabs or segmented buttons) for `All`, `Today`, and `Overdue`.
+      - Ensure task list rendering responds to active filter state.
+  - Story: Add Today tasks filter
+    - Acceptance Criteria:
+      - Given tasks have due dates, when `Today` filter is active, then only incomplete tasks due on the current local date are shown.
+      - Given a task is completed, when `Today` filter is active, then that task is excluded.
+    - Technical Requirements:
+      - Implement frontend filtering by local date match against `due_date`.
+      - Exclude completed tasks in `Today` filtered results.
+      - Normalize date comparison to avoid timezone drift in day-level filtering.
+  - Story: Add Overdue tasks filter
+    - Acceptance Criteria:
+      - Given tasks have due dates earlier than today, when `Overdue` filter is active, then only incomplete overdue tasks are shown.
+      - Given a task has no due date or is completed, when `Overdue` filter is active, then it is excluded.
+    - Technical Requirements:
+      - Implement overdue predicate using current local date and `due_date`.
+      - Exclude tasks with null due date and completed tasks from overdue results.
+      - Keep filtering logic consistent with date parsing used for due date display.
+
+- Epic: Local-Only Data Storage
+  - Story: Keep task data stored locally only
+    - Acceptance Criteria:
+      - Given the application runs in MVP mode, when users create, update, or delete tasks, then data persists only in local app storage.
+      - Given MVP scope constraints, when architecture is reviewed, then no external storage integration exists.
+    - Technical Requirements:
+      - Continue using local Express API endpoints under `/api/tasks`.
+      - Continue using local SQLite persistence in backend runtime.
+      - Do not add external database or third-party storage dependencies.
+
+- Epic: Task Validation Rules
+  - Story: Require task title before saving
+    - Acceptance Criteria:
+      - Given a user submits an empty or whitespace-only title, when saving, then the task is not saved.
+      - Given a title is empty, when submitting from UI, then the user sees a validation message.
+      - Given invalid title reaches API, when backend validates request, then API returns `400`.
+    - Technical Requirements:
+      - Keep frontend title trim-check before calling save handler.
+      - Keep backend validation in POST and PUT routes for required non-empty string title.
+      - Preserve test coverage for invalid-title rejection.
+  - Story: Validate priority is P1, P2, or P3
+    - Acceptance Criteria:
+      - Given a valid priority (`P1`, `P2`, `P3`), when saving, then the request succeeds.
+      - Given any other priority value, when saving, then request fails validation and task is not persisted.
+    - Technical Requirements:
+      - Add shared validation utility for allowed priority enum values.
+      - Apply priority validation in backend create and update handlers.
+      - Return `400` error payload for invalid priority input.
+  - Story: Treat invalid due dates as no due date
+    - Acceptance Criteria:
+      - Given an invalid due date value is provided, when task is processed, then due date is ignored and stored as absent.
+      - Given a valid `YYYY-MM-DD` due date value, when task is processed, then due date is stored.
+    - Technical Requirements:
+      - Add backend date validation for `YYYY-MM-DD` format.
+      - Convert invalid due date inputs to `null` before persistence.
+      - Keep frontend date normalization aligned with backend acceptance rules.
+
+## Post-MVP
+
+- Epic: Overdue Task Visibility
+  - Story: Visually highlight overdue tasks
+    - Acceptance Criteria:
+      - Given a task is overdue and incomplete, when shown in the list, then it is visually distinct from non-overdue tasks.
+      - Given a task is completed, when shown in list, then overdue highlight is not applied.
+    - Technical Requirements:
+      - Add computed `isOverdue` state per task in list rendering logic.
+      - Apply dedicated styling token or class for overdue task rows and due date chip.
+      - Ensure overdue styling coexists with existing completed-task styling.
+
+- Epic: Task Sorting
+  - Story: Sort overdue tasks before other tasks
+    - Acceptance Criteria:
+      - Given mixed task states, when list is rendered, then overdue incomplete tasks appear before non-overdue tasks.
+    - Technical Requirements:
+      - Update ordering logic to prioritize overdue status as the first sort key.
+      - Implement sort in backend query composition or deterministic frontend comparator.
+  - Story: Sort tasks by priority from P1 to P3
+    - Acceptance Criteria:
+      - Given tasks with different priorities, when list is rendered, then `P1` appears before `P2`, and `P2` before `P3`.
+    - Technical Requirements:
+      - Add priority rank mapping (`P1=1`, `P2=2`, `P3=3`) in sort logic.
+      - Ensure missing or legacy priority resolves to `P3` before comparison.
+  - Story: Sort tasks by due date in ascending order
+    - Acceptance Criteria:
+      - Given tasks with due dates, when sorted, then earlier dates appear before later dates.
+    - Technical Requirements:
+      - Compare `due_date` as date-only values for stable ordering.
+      - Keep due date ordering after overdue and priority sort keys.
+  - Story: Place tasks without due dates at the end
+    - Acceptance Criteria:
+      - Given some tasks have no due date, when sorted, then undated tasks appear after dated tasks.
+    - Technical Requirements:
+      - Treat null or empty due date as final bucket in sorting logic.
+      - Preserve stable ordering among undated tasks with existing tie-breaker (for example, creation order).
