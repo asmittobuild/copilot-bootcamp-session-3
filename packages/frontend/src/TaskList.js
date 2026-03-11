@@ -27,6 +27,26 @@ function TaskList({ onEdit }) {
     });
   };
 
+  const getPriorityChipStyles = (priority) => {
+    if (priority === 'P1') {
+      return {
+        background: '#07F2E6',
+        color: '#212121',
+      };
+    }
+    if (priority === 'P2') {
+      return {
+        background: '#7A7A7A',
+        color: '#ffffff',
+      };
+    }
+    return {
+      background: '#7A7A7A',
+      color: '#ffffff',
+      opacity: 0.75,
+    };
+  };
+
   const fetchTasks = async () => {
     try {
       setLoading(true);
@@ -220,6 +240,17 @@ function TaskList({ onEdit }) {
                   }}
                 />
               )}
+              <Chip
+                label={task.priority || 'P3'}
+                size="small"
+                sx={{
+                  height: 20,
+                  fontSize: '0.7rem',
+                  fontWeight: 700,
+                  minWidth: 42,
+                  ...getPriorityChipStyles(task.priority || 'P3'),
+                }}
+              />
               <Box 
                 sx={{ 
                   display: 'flex', 
